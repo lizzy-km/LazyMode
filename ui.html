@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced HTML Demo</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --secondary-color: #FFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+        }
+
+        .flex-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            flex: 1 1 300px;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: var(--secondary-color);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .flex-grid {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Advanced HTML Demo</h1>
+            <nav>
+                <button class="btn">Home</button>
+                <button class="btn">About</button>
+                <button class="btn">Contact</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="flex-grid">
+            <article class="card">
+                <h2>Card 1</h2>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <button class="btn">Learn More</button>
+            </article>
+            <article class="card">
+                <h2>Card 2</h2>
+                <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <button class="btn">Learn More</button>
+            </article>
+            <article class="card">
+                <h2>Card 3</h2>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco.</p>
+                <button class="btn">Learn More</button>
+            </article>
+        </section>
+    </main>
+    <script type="module" src="./code.js" ></script>
+</body>
+
+
+</html>
