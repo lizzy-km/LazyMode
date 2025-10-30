@@ -122,7 +122,12 @@ const cssDataClass = new cssData();
 figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const node = event.node;
+    // If this node is a Component, it's safe to call getInstancesAsync
+    // if (node.type === 'COMPONENT') {
+    //   console.log(await (node as ComponentNode).getInstancesAsync());
+    // }
     let cssStyle = [];
+    const constantValue = [];
     const css = (node) => __awaiter(void 0, void 0, void 0, function* () {
         const { cssValue } = cssDataClass;
         const childNodes = 'children' in node ? node.children : [];
@@ -150,7 +155,6 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
         const isInput = node.name.includes('input');
         const childProps = (key) => isInput && key in childNodes[0] ? childNodes[0][key] : "";
         const isVector = 'vectorPaths' in node;
-        console.log(node.fontSize, node);
         if (isVector) {
             return `<i> ${node.name}</i>`;
         }
@@ -175,8 +179,24 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
     }} className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
                 return code(nodes);
-            })) : ''} ${text} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
+            })) : ''} {${text.split(' ').join('_')}} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
         }
+    };
+    const constValueFun = (node) => {
+        const childNodes = 'children' in node ? node.children : [];
+        const text = 'characters' in node ? node.characters : "";
+        if (text.length > 0) {
+            constantValue.push(text);
+            return `${constantValue.map((val) => ` const ${val} = ${val} `)}`;
+        }
+        if (childNodes) {
+            for (let i = 0; i < childNodes.length; i++) {
+                const childNode = childNodes[i];
+                // console.log(childNode.type,'from_css')
+                constValueFun(childNode);
+            }
+        }
+        return `${constantValue.map((val) => ` const ${val.split(' ').join('_')} = ${val} `)}`.replace(',', ';');
     };
     const resFunction = `function CalResponsiveValue(value: number) {
     function CalPercent(value: number) {
@@ -211,6 +231,11 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
             language: 'JAVASCRIPT',
             code: (resFunction),
             title: 'LazyDev Function',
+        },
+        {
+            language: 'JAVASCRIPT',
+            code: constValueFun(node),
+            title: 'LazyDev constantValue',
         }
     ];
 }));

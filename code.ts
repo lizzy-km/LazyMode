@@ -180,10 +180,17 @@ class cssData {
 const cssDataClass = new cssData()
 
 figma.codegen.on('generate', async (event: CodegenEvent) => {
-  const node: SceneNode = event.node as FrameNode
+  const node: SceneNode = event.node as SceneNode
+
+  // If this node is a Component, it's safe to call getInstancesAsync
+  // if (node.type === 'COMPONENT') {
+  //   console.log(await (node as ComponentNode).getInstancesAsync());
+  // }
 
 
   let cssStyle: {}[] = []
+
+  const constantValue: string[] = []
 
   const css = async (node: SceneNode) => {
     const { cssValue } = cssDataClass
@@ -236,7 +243,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
 
 
-    console.log((node as TextNode ).fontSize,node)
+
 
 
     if (isVector) {
@@ -246,6 +253,10 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       return `<i> ${node.name}</i>`
     }
     else {
+
+
+
+
       return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
     height:CalResponsiveValue(${node.height}),
@@ -254,7 +265,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     paddingLeft:CalResponsiveValue(${padding('paddingLeft')}),
     paddingRight:CalResponsiveValue(${padding('paddingRight')}),
     gap:CalResponsiveValue(${padding('itemSpacing')}),
-    fontSize:CalResponsiveValue(${isInput ? 16 : typeof(textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14 }),
+    fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
     borderTopLeftRadius:CalResponsiveValue(${(padding('topLeftRadius'))}),
     borderTopRightRadius:CalResponsiveValue(${(padding('topRightRadius'))}),
     borderBottomLeftRadius:CalResponsiveValue(${(padding('bottomLeftRadius'))}),
@@ -267,10 +278,47 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
         return code(nodes)
       })) : ''
-        } ${text} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
+        } {${text.split(' ').join('_')}} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
     }
 
+
+
   }
+
+  const constValueFun = (node: SceneNode) => {
+    const childNodes: readonly SceneNode[] = 'children' in node ? (node.children as readonly SceneNode[]) : [];
+
+    const text = 'characters' in node ? node.characters : "";
+
+    if (text.length > 0) {
+      constantValue.push(text)
+
+
+    return `${constantValue.map((val)=> ` const ${val} = ${val} ` )}`
+
+    }
+    if (childNodes) {
+      for (let i = 0; i < childNodes.length; i++) {
+        const childNode = childNodes[i];
+        // console.log(childNode.type,'from_css')
+
+
+        constValueFun(childNode as SceneNode)
+
+
+
+      }
+    }
+
+    return `${constantValue.map((val)=> ` const ${val.split(' ').join('_')} = ${val} ` )}`.replace(',',';')
+
+
+
+
+
+
+  }
+
 
 
   const resFunction = `function CalResponsiveValue(value: number) {
@@ -293,6 +341,9 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 }`
 
 
+
+
+
   return [
     {
       language: 'JAVASCRIPT',
@@ -311,6 +362,11 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       code: (resFunction),
 
       title: 'LazyDev Function',
+    },
+    {
+      language: 'JAVASCRIPT',
+      code: constValueFun(node),
+      title: 'LazyDev constantValue',
     }
 
   ];
