@@ -294,7 +294,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       constantValue.push(text)
 
 
-    return `${constantValue.map((val)=> ` const ${val} = ${val} ` )}`
+      return `${constantValue.map((val) => ` const ${val} = ${val} `)}`
 
     }
     if (childNodes) {
@@ -310,7 +310,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       }
     }
 
-    return `${constantValue.map((val)=> ` const ${val.split(' ').join('_')} = ${val} ` )}`.replace(',',';')
+    return `${constantValue.map((val) => ` const ${val.split(' ').join('_')} = ${val} `)}`.replace(',', ';')
 
 
 
