@@ -1,9 +1,9 @@
 
- interface FigmaColor {
+interface FigmaColor {
   r: number; g: number; b: number; a: number;
 }
 
- interface FigmaPaint {
+interface FigmaPaint {
   type: 'SOLID' | 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'IMAGE';
   visible?: boolean;
   color?: FigmaColor;
@@ -14,21 +14,26 @@
 
 
 
- interface FigmaVectorPath {
+interface FigmaVectorPath {
   data: string; // The d-attribute for SVG
   windingRule: string;
 }
 
- interface FigmaVectorNode {
+interface FigmaVectorNode {
   id: string;
   name: string;
-  type: "VECTOR" | "TEXT_PATH" | "HIGHLIGHT";
-  absoluteBoundingBox: { x: number; y: number; width: number; height: number }; // For viewBox
+  type: NodeType;
+  absoluteBoundingBox: {
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  }; // For viewBox
   fills: FigmaPaint[];
-  strokes: FigmaPaint[];
+  strokes: any[];
   strokeWeight: number;
-  strokeCap: string;
-  strokeJoin: 'MITER' | 'BEVEL' | 'ROUND';
+  strokeCap: StrokeCap;
+  strokeJoin: StrokeJoin;
   strokeDashes?: number[]; // Array of numbers e.g., [5, 5]
   opacity?: number;
   transform?: [[number, number, number], [number, number, number]]; // 2x3 matrix
@@ -36,12 +41,12 @@
   fillGeometry?: any[]; // Figma also provides this, but vectorPaths.data is often easier
 }
 
- function figmaRgbaToCssColor(color: { r: number; g: number; b: number; a: number }): string {
+function figmaRgbaToCssColor(color: { r: number; g: number; b: number; a?: number }): string {
   const r = Math.round(color.r * 255);
   const g = Math.round(color.g * 255);
   const b = Math.round(color.b * 255);
   // Figma's 'a' is 0-1, CSS rgba is also 0-1.
-  const a = color.a;
+  const a = color.a ?? 1
 
   const toHex2 = (n: number) => {
     const s = n.toString(16);
@@ -58,7 +63,7 @@
 
 
 // Helper to convert Figma's strokeCap to SVG's stroke-linecap
- function figmaStrokeCapToSvg(cap: string): 'butt' | 'round' | 'square' {
+function figmaStrokeCapToSvg(cap: string): 'butt' | 'round' | 'square' {
   switch (cap) {
     case 'ROUND': return 'round';
     case 'SQUARE': return 'square';
@@ -68,7 +73,7 @@
 }
 
 // Helper to convert Figma's strokeJoin to SVG's stroke-linejoin
- function figmaStrokeJoinToSvg(join: 'MITER' | 'BEVEL' | 'ROUND'): 'miter' | 'bevel' | 'round' {
+function figmaStrokeJoinToSvg(join: 'MITER' | 'BEVEL' | 'ROUND'): 'miter' | 'bevel' | 'round' {
   switch (join) {
     case 'ROUND': return 'round';
     case 'BEVEL': return 'bevel';
@@ -77,7 +82,7 @@
   }
 }
 
- function figmaWindingRuleToSvg(rule: string): 'evenodd' | 'nonzero' {
+function figmaWindingRuleToSvg(rule: string): 'evenodd' | 'nonzero' {
   switch (rule) {
     case 'EVENODD': return 'evenodd';
     case 'NONZERO': return 'nonzero';
@@ -86,7 +91,9 @@
 }
 
 
- function convertFigmaVectorNodeToSVG(node: FigmaVectorNode): string {
+function convertFigmaVectorNodeToSVG(node: VectorNode): string {
+
+  console.log(node, 'Vectorrr SVG')
   if (node.type !== 'VECTOR') {
     throw new Error(`Node must be of type 'VECTOR', received '${node.type}'`);
   }
@@ -97,7 +104,9 @@
     const attrs: string[] = [];
 
     // --- Fill Attributes ---
-    const solidFills = node.fills.filter(f => f.type === 'SOLID' && f.visible !== false);
+    const solidFills = ((node).fills as SolidPaint[]).filter(f => f.type === 'SOLID' && f.visible !== false);
+    const gradientFill = (((node).fills) as GradientPaint[]).filter(f => f.type === 'GRADIENT_LINEAR' && f.visible !== false)
+
     if (solidFills.length > 0) {
       const fill = solidFills[0];
       if (fill.color) {
@@ -105,7 +114,9 @@
       } else {
         attrs.push(`fill="none"`);
       }
-    } else {
+    }
+
+    else {
       attrs.push(`fill="none"`);
     }
 
@@ -115,15 +126,13 @@
     const solidStrokes = node.strokes.filter(s => s.type === 'SOLID' && s.visible !== false);
     if (solidStrokes.length > 0) {
       const stroke = solidStrokes[0];
-      if (stroke.color) {
-        attrs.push(`stroke="${figmaRgbaToCssColor(stroke.color)}"`);
+      if ((stroke as SolidPaint).color) {
+        attrs.push(`stroke="${figmaRgbaToCssColor((stroke as SolidPaint).color)}"`);
       }
-      attrs.push(`strokeWidth="${node.strokeWeight}"`);
-      attrs.push(`strokeLinecap="${figmaStrokeCapToSvg(node.strokeCap)}"`);
-      attrs.push(`strokeLinejoin="${figmaStrokeJoinToSvg(node.strokeJoin)}"`);
-      if (node.strokeDashes && node.strokeDashes.length > 0) {
-        attrs.push(`strokeDasharray="${node.strokeDashes.join(' ')}"`);
-      }
+      attrs.push(`strokeWidth="${String(node.strokeWeight)}"`);
+      attrs.push(`strokeLinecap="${figmaStrokeCapToSvg(String(node.strokeCap))}"`);
+      attrs.push(`strokeLinejoin="${figmaStrokeJoinToSvg((node.strokeJoin) as StrokeJoin)}"`);
+
     } else {
       attrs.push(`stroke="none"`);
     }
@@ -137,7 +146,7 @@
     svgElements.push(`<path d="${vp.data}" ${attrs.join(' ')}/>`);
   });
 
-  const { x, y, width, height } = node.absoluteBoundingBox;
+  const { x, y, width, height } = node.absoluteBoundingBox as { x: number, y: number, width: number, height: number }
   const viewBox = `${x} ${y} ${width} ${height}`; // Figma's absoluteBoundingBox is useful here.
   // Often, you'd want the viewBox to start at 0 0
   // and offset the path within a <g> or adjust d-attribute.
@@ -147,8 +156,8 @@
   const finalSvgContent = svgElements.map(el => `<g >${el}</g>`).join('\n');
 
 
-  return `<svg className='_${node.id.split(':').join('_').split(';').join('_')}'  width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  ${finalSvgContent}
+  return `<svg  className='_${node.id.split(':').join('_').split(';').join('_')} absolute '  width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+  ${svgElements.map(el => `<g  >${el}</g>`).join('\n')}
 </svg>`;
 }
 
@@ -156,10 +165,12 @@
 class cssData {
 
 
-  async cssValue(node: any) {
+  async cssValue(node: SceneNode) {
     // return node
     return await node.getCSSAsync().then((data: any) => {
       return data
+    }).catch((err) => {
+      console.log(err, 'errFrom class')
     })
 
   }
@@ -169,8 +180,10 @@ class cssData {
 const cssDataClass = new cssData()
 
 
+
 figma.codegen.on('generate', async (event: CodegenEvent) => {
-  const node: SceneNode = event.node
+  const node: SceneNode = event.node as FrameNode
+
 
   let cssStyle: {}[] = []
 
@@ -181,18 +194,25 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
 
     await cssValue(node).then((data) => {
-      cssStyle.push(` ._${node.id.split(':').join('_').split(';').join('_')} ${JSON.stringify(data).split('",').join(';').split('"').join('')}
+      cssStyle.push(` ._${node.id.split(':')?.join('_')?.split(';')?.join('_')} ${JSON.stringify(data)?.split('",')?.join(';')?.split('"')?.join('')}
        `)
 
+    }).catch((err) => {
+      console.log(err, 'from"cssValue')
     })
 
 
 
     if (childNodes) {
+
       for (let i = 0; i < childNodes.length; i++) {
         const childNode = childNodes[i];
+        // console.log(childNode.type,'from_css')
 
-        await css(childNode)
+
+        await css(childNode as SceneNode).catch((err) => console.log(err < 'from_cssFunc'))
+
+
 
       }
 
@@ -202,6 +222,10 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
   }
 
+
+
+
+
   const code = (node: SceneNode) => {
 
 
@@ -209,48 +233,22 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     const childNodes: readonly SceneNode[] = 'children' in node ? (node.children as readonly SceneNode[]) : [];
     const text = 'characters' in node ? node.characters : "";
 
-    const padding = (position: keyof FrameNode) => position in node ? (node as any)[position] : 0;
-    const textStyle = (key: keyof TextNode) => key in node ? (node as any)[key] : 0;
+    const padding = (position: keyof FrameNode) => position in node ? String((node as any)[position]) : 0;
+    const textStyle = (key: keyof TextNode) => key in node ? (node as TextNode)[key] : 0;
     const isInput = node.name.includes('input')
     const childProps = (key: keyof TextNode) => isInput && key in childNodes[0] ? (childNodes[0] as any)[key] : "";
     const isVector = 'vectorPaths' in node
 
-    const solidStroke = isVector ? ((node as VectorNode).strokes[0] as SolidPaint).color : { r: 0, g: 0, b: 0 }
-          console.log(node)
+
 
     if (isVector) {
 
-      const nodeData: FigmaVectorNode = {
-        id: node.id,
-        name: node.name,
-        type: node.type,
-        absoluteBoundingBox: {
-          height: node.absoluteBoundingBox?.height || 0,
-          width: node.absoluteBoundingBox?.width || 0,
-          x: node.absoluteBoundingBox?.x || 0,
-          y: node.absoluteBoundingBox?.y || 0
-        },
-        fills: Array.isArray(node.fills) ? node.fills as FigmaPaint[] : [], // Semi-transparent blue
-        strokes: (node.strokes as any[]).map(s => {
-          // Ensure Solid paint color always has an alpha channel (default 1) so it matches FigmaColor
-          if (s && s.type === 'SOLID' && s.color) {
-            const c = s.color as any;
-            const colorWithAlpha = { r: c.r, g: c.g, b: c.b, a: ('a' in c ? c.a : 1) };
-            return { ...s, color: colorWithAlpha } as FigmaPaint;
-          }
-          return s as FigmaPaint;
-        }),
-        strokeWeight: Number(node.strokeWeight),
-        strokeCap: node.strokeCap as StrokeCap,
-        strokeJoin: node.strokeJoin as StrokeJoin,
-        strokeDashes: 'strokeDashes' in node ? (node as any).strokeDashes : undefined, // 5px dash, 3px gap
-        opacity: 1,
-        vectorPaths: node.vectorPaths as VectorPath[]
-      }
-      return convertFigmaVectorNodeToSVG(nodeData)
+
+
+      return `<i> ${node.name}</i>`
     }
     else {
-      return `  <${isInput ? `input` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
+      return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
     height:CalResponsiveValue(${node.height}),
     paddingTop:CalResponsiveValue(${padding('paddingTop')}),
@@ -258,17 +256,38 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     paddingLeft:CalResponsiveValue(${padding('paddingLeft')}),
     paddingRight:CalResponsiveValue(${padding('paddingRight')}),
     gap:CalResponsiveValue(${padding('itemSpacing')}),
-    fontSize:CalResponsiveValue(${isInput ? 16 : textStyle('fontSize')}),
-    borderRadius:CalResponsiveValue(${padding('cornerRadius')}),
+    fontSize:CalResponsiveValue(${isInput ? 16 : String(textStyle('fontSize'))}),
+    borderRadius:CalResponsiveValue(${String(padding('cornerRadius'))}),
     color: ${isInput ? `'#fff'` : `''`}
-    }} className='_${node.id.split(':').join('_').split(';').join('_')}' >
+    }} className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
         return code(nodes)
       })) : ''
-        } ${text} </${isInput ? `input` : `div`} >`
+        } ${text} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
     }
 
   }
+
+
+  const resFunction = `function CalResponsiveValue(value: number) {
+    function CalPercent(value: number) {
+
+
+    const isSmallScreen = window.innerWidth <= 1280
+    const isNormalScreen = (window.innerWidth > 1280) && (window.innerWidth <= 1800)
+    const isBigScreen = window.innerWidth > 1800
+
+
+    const percent: number = isSmallScreen ? 110 : isNormalScreen ? 100 : isBigScreen ? 88 : 0;
+
+    return (value / 1512) * percent
+
+}
+    const width = window.innerWidth;
+
+    return (CalPercent(value) / 100) * width
+}`
+
 
 
 
@@ -278,7 +297,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
   return [
     {
       language: 'JAVASCRIPT',
-      code: code(node).split('>,').join('>'),
+      code: code(node)?.split('>,')?.join('>'),
 
       title: 'LazyDev HTML',
     },
@@ -286,8 +305,14 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       language: 'JAVASCRIPT',
       code: (await css(node)),
 
-      title: 'LazyDev HTML',
+      title: 'LazyDev CSS',
     },
+     {
+      language: 'JAVASCRIPT',
+      code: (resFunction),
+
+      title: 'LazyDev Function',
+    }
 
   ];
 });
