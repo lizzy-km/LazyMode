@@ -179,8 +179,6 @@ class cssData {
 
 const cssDataClass = new cssData()
 
-
-
 figma.codegen.on('generate', async (event: CodegenEvent) => {
   const node: SceneNode = event.node as FrameNode
 
@@ -223,9 +221,6 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
   }
 
 
-
-
-
   const code = (node: SceneNode) => {
 
 
@@ -234,11 +229,14 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     const text = 'characters' in node ? node.characters : "";
 
     const padding = (position: keyof FrameNode) => position in node ? String((node as any)[position]) : 0;
-    const textStyle = (key: keyof TextNode) => key in node ? (node as TextNode)[key] : 0;
+    const textStyle = (key: keyof TextNode) => key in node ? ((node as TextNode)[key]) : 0;
     const isInput = node.name.includes('input')
     const childProps = (key: keyof TextNode) => isInput && key in childNodes[0] ? (childNodes[0] as any)[key] : "";
     const isVector = 'vectorPaths' in node
 
+
+
+    console.log((node as TextNode ).fontSize,node)
 
 
     if (isVector) {
@@ -256,8 +254,14 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     paddingLeft:CalResponsiveValue(${padding('paddingLeft')}),
     paddingRight:CalResponsiveValue(${padding('paddingRight')}),
     gap:CalResponsiveValue(${padding('itemSpacing')}),
-    fontSize:CalResponsiveValue(${isInput ? 16 : String(textStyle('fontSize'))}),
-    borderRadius:CalResponsiveValue(${String(padding('cornerRadius'))}),
+    fontSize:CalResponsiveValue(${isInput ? 16 : typeof(textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14 }),
+    borderTopLeftRadius:CalResponsiveValue(${(padding('topLeftRadius'))}),
+    borderTopRightRadius:CalResponsiveValue(${(padding('topRightRadius'))}),
+    borderBottomLeftRadius:CalResponsiveValue(${(padding('bottomLeftRadius'))}),
+    borderBottomRightRadius:CalResponsiveValue(${(padding('bottomRightRadius'))}),
+
+
+
     color: ${isInput ? `'#fff'` : `''`}
     }} className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
@@ -289,11 +293,6 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 }`
 
 
-
-
-
-
-
   return [
     {
       language: 'JAVASCRIPT',
@@ -307,7 +306,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
       title: 'LazyDev CSS',
     },
-     {
+    {
       language: 'JAVASCRIPT',
       code: (resFunction),
 
