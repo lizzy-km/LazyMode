@@ -229,7 +229,9 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
                 constValueFun(childNode);
             }
         }
-        return `${constantValue.map((val) => ` const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';');
+        return `
+    ${constantValue.map((val) => ` 
+  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';');
     };
     const resFunction = `function CalResponsiveValue(value: number) {
     function CalPercent(value: number) {

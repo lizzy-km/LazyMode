@@ -346,7 +346,9 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       }
     }
 
-    return `${constantValue.map((val) => ` const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';')
+    return `
+    ${constantValue.map((val) => ` 
+  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';')
 
 
 
