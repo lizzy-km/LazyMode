@@ -302,6 +302,8 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
 
 
+      console.log(text)
+
 
       return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
@@ -314,7 +316,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
         return code(nodes)
       })) : ''
-        } {${text.split(' ').join('_')}} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
+        } ${text.length > 0 ? `{val_${(text.length > 10 ? text.slice(0, 10) : text).split(' ').join('_').split(":").join('f').split("#").join('c')}}`:''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
     }
 
 
@@ -348,7 +350,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
     return `
     ${constantValue.map((val) => ` 
-  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';')
+  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('f').split("#").join('c')} = "${val}" `)}`.replace(',', ';')
 
 
 

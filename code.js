@@ -202,6 +202,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
             return `<i> ${node.name}</i>`;
         }
         else {
+            console.log(text);
             return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
     height:CalResponsiveValue(${node.height}),
@@ -212,7 +213,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
     className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
                 return code(nodes);
-            })) : ''} {${text.split(' ').join('_')}} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
+            })) : ''} ${text.length > 0 ? `{val_${(text.length > 10 ? text.slice(0, 10) : text).split(' ').join('_').split(":").join('f').split("#").join('c')}}` : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
         }
     };
     const constValueFun = (node) => {
@@ -231,7 +232,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
         }
         return `
     ${constantValue.map((val) => ` 
-  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';');
+  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('f').split("#").join('c')} = "${val}" `)}`.replace(',', ';');
     };
     const resFunction = `function CalResponsiveValue(value: number) {
     function CalPercent(value: number) {
