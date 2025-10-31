@@ -214,7 +214,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
     className='_${node.id.split(':').join('_').split(';').join('_')}     ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
                 return code(nodes);
-            })) : ''} ${text.length > 0 ? `{val_${(text.length > 20 ? text.slice(0, 20) : text).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_')}}` : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
+            })) : ''} ${text.length > 0 ? `{val_${(text.length > 20 ? text.slice(0, 20) : text).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_').replace(')', '_').replace('(', '_').replace('*', '')}}` : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
         }
     };
     const constValueFun = (node) => {
@@ -233,7 +233,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
         }
         return `
     ${constantValue.map((val) => ` 
-  const val_${(val.length > 20 ? val.slice(0, 20) : val).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_')} = "${val}" `).join('')}`;
+  const val_${(val.length > 20 ? val.slice(0, 20) : val).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_').replace(')', '_').replace('(', '_').replace('*', '')} = "${val}" `).join('')}`;
     };
     const resFunction = `function CalResponsiveValue(value: number) {
     function CalPercent(value: number) {
