@@ -296,13 +296,13 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
 
 
-      return `<i> ${node.name}</i>`
+      return `<pre> icon </pre>`
     }
     else {
 
 
 
-      console.log(text)
+      console.log(node)
 
 
       return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
@@ -310,13 +310,14 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     height:CalResponsiveValue(${node.height}),
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
     ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
-    color: ${isInput ? `'#fff'` : `''`}
+    color: ${isInput ? `'#fff'` : `''`},
+   
     }}
-    className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
+    className='_${node.id.split(':').join('_').split(';').join('_')}     ' >
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
         return code(nodes)
       })) : ''
-        } ${text.length > 0 ? `{val_${(text.length > 10 ? text.slice(0, 10) : text).split(' ').join('_').split(":").join('f').split("#").join('c')}}`:''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
+        } ${text.length > 0 ? `{val_${(text.length > 20 ? text.slice(0, 20) : text).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_')}}` : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`
     }
 
 
@@ -332,7 +333,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       constantValue.push(text)
 
 
-      return `${constantValue.map((val) => ` const ${val} = ${val} `)}`
+      return `${constantValue.map((val) => ` const ${val} = ${val} `).join('')}`
 
     }
     if (childNodes) {
@@ -350,7 +351,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
     return `
     ${constantValue.map((val) => ` 
-  const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('f').split("#").join('c')} = "${val}" `)}`.replace(',', ';')
+  const val_${(val.length > 20 ? val.slice(0, 20) : val).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_')} = "${val}" `).join('')}`
 
 
 
