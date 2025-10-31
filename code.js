@@ -150,11 +150,54 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
     const code = (node) => {
         const childNodes = 'children' in node ? node.children : [];
         const text = 'characters' in node ? node.characters : "";
-        const padding = (position) => position in node ? String(node[position]) : 0;
+        const padding = (position) => position in node ? String(node[position]) : '0';
         const textStyle = (key) => key in node ? (node[key]) : 0;
         const isInput = node.name.includes('input');
         const childProps = (key) => isInput && key in childNodes[0] ? childNodes[0][key] : "";
         const isVector = 'vectorPaths' in node;
+        const cssPropsArr = [
+            {
+                type: 'paddingTop',
+                position: 'paddingTop'
+            },
+            {
+                type: 'paddingBottom',
+                position: 'paddingBottom'
+            },
+            {
+                type: 'paddingLeft',
+                position: 'paddingLeft'
+            },
+            {
+                type: 'paddingRight',
+                position: 'paddingRight'
+            },
+            {
+                type: 'borderTopLeftRadius',
+                position: 'topLeftRadius'
+            },
+            {
+                type: 'borderTopRightRadius',
+                position: 'topRightRadius'
+            },
+            {
+                type: 'borderBottomLeftRadius',
+                position: 'bottomLeftRadius'
+            },
+            {
+                type: 'gap',
+                position: 'itemSpacing'
+            },
+        ];
+        function CssProps(type, position) {
+            if (padding(`${position}`) !== '0') {
+                return `${type}: CalResponsiveValue(${padding(`${position}`)}),
+    `;
+            }
+            else {
+                return ``;
+            }
+        }
         if (isVector) {
             return `<i> ${node.name}</i>`;
         }
@@ -162,21 +205,11 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
             return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
     height:CalResponsiveValue(${node.height}),
-    paddingTop:CalResponsiveValue(${padding('paddingTop')}),
-    paddingBottom:CalResponsiveValue(${padding('paddingBottom')}),
-    paddingLeft:CalResponsiveValue(${padding('paddingLeft')}),
-    paddingRight:CalResponsiveValue(${padding('paddingRight')}),
-    gap:CalResponsiveValue(${padding('itemSpacing')}),
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
-    borderTopLeftRadius:CalResponsiveValue(${(padding('topLeftRadius'))}),
-    borderTopRightRadius:CalResponsiveValue(${(padding('topRightRadius'))}),
-    borderBottomLeftRadius:CalResponsiveValue(${(padding('bottomLeftRadius'))}),
-    borderBottomRightRadius:CalResponsiveValue(${(padding('bottomRightRadius'))}),
-
-
-
+    ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
     color: ${isInput ? `'#fff'` : `''`}
-    }} className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
+    }}
+    className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
                 return code(nodes);
             })) : ''} {${text.split(' ').join('_')}} </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
@@ -196,7 +229,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
                 constValueFun(childNode);
             }
         }
-        return `${constantValue.map((val) => ` const ${val.split(' ').join('_')} = ${val} `)}`.replace(',', ';');
+        return `${constantValue.map((val) => ` const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';');
     };
     const resFunction = `function CalResponsiveValue(value: number) {
     function CalPercent(value: number) {

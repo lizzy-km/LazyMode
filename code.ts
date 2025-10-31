@@ -235,14 +235,60 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     const childNodes: readonly SceneNode[] = 'children' in node ? (node.children as readonly SceneNode[]) : [];
     const text = 'characters' in node ? node.characters : "";
 
-    const padding = (position: keyof FrameNode) => position in node ? String((node as any)[position]) : 0;
+    const padding = (position: keyof FrameNode) => position in node ? String((node as any)[position]) : '0';
     const textStyle = (key: keyof TextNode) => key in node ? ((node as TextNode)[key]) : 0;
     const isInput = node.name.includes('input')
     const childProps = (key: keyof TextNode) => isInput && key in childNodes[0] ? (childNodes[0] as any)[key] : "";
     const isVector = 'vectorPaths' in node
 
 
+    const cssPropsArr = [
+      {
+        type: 'paddingTop',
+        position: 'paddingTop'
+      },
+      {
+        type: 'paddingBottom',
+        position: 'paddingBottom'
+      },
+      {
+        type: 'paddingLeft',
+        position: 'paddingLeft'
+      },
+      {
+        type: 'paddingRight',
+        position: 'paddingRight'
+      },
+      {
+        type: 'borderTopLeftRadius',
+        position: 'topLeftRadius'
+      },
+      {
+        type: 'borderTopRightRadius',
+        position: 'topRightRadius'
+      },
+      {
+        type: 'borderBottomLeftRadius',
+        position: 'bottomLeftRadius'
+      },
+      {
+        type: 'gap',
+        position: 'itemSpacing'
+      },
 
+    ]
+
+
+    function CssProps(type: string, position: string): string {
+      if (padding(`${position}` as keyof FrameNode) !== '0') {
+        return `${type}: CalResponsiveValue(${padding(`${position}` as keyof FrameNode)}),
+    `
+      } else {
+        return ``
+      }
+
+
+    }
 
 
 
@@ -260,21 +306,11 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
     height:CalResponsiveValue(${node.height}),
-    paddingTop:CalResponsiveValue(${padding('paddingTop')}),
-    paddingBottom:CalResponsiveValue(${padding('paddingBottom')}),
-    paddingLeft:CalResponsiveValue(${padding('paddingLeft')}),
-    paddingRight:CalResponsiveValue(${padding('paddingRight')}),
-    gap:CalResponsiveValue(${padding('itemSpacing')}),
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
-    borderTopLeftRadius:CalResponsiveValue(${(padding('topLeftRadius'))}),
-    borderTopRightRadius:CalResponsiveValue(${(padding('topRightRadius'))}),
-    borderBottomLeftRadius:CalResponsiveValue(${(padding('bottomLeftRadius'))}),
-    borderBottomRightRadius:CalResponsiveValue(${(padding('bottomRightRadius'))}),
-
-
-
+    ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
     color: ${isInput ? `'#fff'` : `''`}
-    }} className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
+    }}
+    className='_${node.id.split(':').join('_').split(';').join('_')}   ' >
       ${childNodes && !isInput ? (childNodes.map((nodes): string => {
         return code(nodes)
       })) : ''
@@ -310,7 +346,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       }
     }
 
-    return `${constantValue.map((val) => ` const ${val.split(' ').join('_')} = ${val} `)}`.replace(',', ';')
+    return `${constantValue.map((val) => ` const val_${(val.length > 10 ? val.slice(0, 10) : val).split(' ').join('_').split(":").join('').split("#").join('')} = "${val}" `)}`.replace(',', ';')
 
 
 
