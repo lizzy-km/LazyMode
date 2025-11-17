@@ -8,104 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-function figmaRgbaToCssColor(color) {
-    var _a;
-    const r = Math.round(color.r * 255);
-    const g = Math.round(color.g * 255);
-    const b = Math.round(color.b * 255);
-    // Figma's 'a' is 0-1, CSS rgba is also 0-1.
-    const a = (_a = color.a) !== null && _a !== void 0 ? _a : 1;
-    const toHex2 = (n) => {
-        const s = n.toString(16);
-        return s.length === 1 ? '0' + s : s;
-    };
-    if (a === 1) {
-        return `#${toHex2(r)}${toHex2(g)}${toHex2(b)}`;
-    }
-    else {
-        return `rgba(${r}, ${g}, ${b}, ${a.toFixed(3)})`;
-    }
-}
-// Helper to convert Figma's strokeCap to SVG's stroke-linecap
-function figmaStrokeCapToSvg(cap) {
-    switch (cap) {
-        case 'ROUND': return 'round';
-        case 'SQUARE': return 'square';
-        case 'NONE': return 'butt'; // Figma 'NONE' maps to SVG 'butt'
-        default: return 'butt';
-    }
-}
-// Helper to convert Figma's strokeJoin to SVG's stroke-linejoin
-function figmaStrokeJoinToSvg(join) {
-    switch (join) {
-        case 'ROUND': return 'round';
-        case 'BEVEL': return 'bevel';
-        case 'MITER': return 'miter';
-        default: return 'miter';
-    }
-}
-function figmaWindingRuleToSvg(rule) {
-    switch (rule) {
-        case 'EVENODD': return 'evenodd';
-        case 'NONZERO': return 'nonzero';
-        default: return 'nonzero';
-    }
-}
-function convertFigmaVectorNodeToSVG(node) {
-    console.log(node, 'Vectorrr SVG');
-    if (node.type !== 'VECTOR') {
-        throw new Error(`Node must be of type 'VECTOR', received '${node.type}'`);
-    }
-    const svgElements = [];
-    node.vectorPaths.forEach(vp => {
-        const attrs = [];
-        // --- Fill Attributes ---
-        const solidFills = (node).fills.filter(f => f.type === 'SOLID' && f.visible !== false);
-        const gradientFill = ((node).fills).filter(f => f.type === 'GRADIENT_LINEAR' && f.visible !== false);
-        if (solidFills.length > 0) {
-            const fill = solidFills[0];
-            if (fill.color) {
-                attrs.push(`fill="${figmaRgbaToCssColor(fill.color)}"`);
-            }
-            else {
-                attrs.push(`fill="none"`);
-            }
-        }
-        else {
-            attrs.push(`fill="none"`);
-        }
-        attrs.push(`fillRule="${figmaWindingRuleToSvg(vp.windingRule)}"`);
-        // --- Stroke Attributes ---
-        const solidStrokes = node.strokes.filter(s => s.type === 'SOLID' && s.visible !== false);
-        if (solidStrokes.length > 0) {
-            const stroke = solidStrokes[0];
-            if (stroke.color) {
-                attrs.push(`stroke="${figmaRgbaToCssColor(stroke.color)}"`);
-            }
-            attrs.push(`strokeWidth="${String(node.strokeWeight)}"`);
-            attrs.push(`strokeLinecap="${figmaStrokeCapToSvg(String(node.strokeCap))}"`);
-            attrs.push(`strokeLinejoin="${figmaStrokeJoinToSvg((node.strokeJoin))}"`);
-        }
-        else {
-            attrs.push(`stroke="none"`);
-        }
-        // --- Global Opacity ---
-        if (node.opacity !== undefined && node.opacity !== 1) {
-            attrs.push(`opacity="${node.opacity.toFixed(3)}"`);
-        }
-        svgElements.push(`<path d="${vp.data}" ${attrs.join(' ')}/>`);
-    });
-    const { x, y, width, height } = node.absoluteBoundingBox;
-    const viewBox = `${x} ${y} ${width} ${height}`; // Figma's absoluteBoundingBox is useful here.
-    // Often, you'd want the viewBox to start at 0 0
-    // and offset the path within a <g> or adjust d-attribute.
-    // This simple approach keeps the paths within their absolute positions.
-    const contentTransform = `translate(${-x} ${-y})`;
-    const finalSvgContent = svgElements.map(el => `<g >${el}</g>`).join('\n');
-    return `<svg  className='_${node.id.split(':').join('_').split(';').join('_')} absolute '  width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-  ${svgElements.map(el => `<g  >${el}</g>`).join('\n')}
-</svg>`;
-}
 class cssData {
     cssValue(node) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -120,13 +22,13 @@ class cssData {
 }
 const cssDataClass = new cssData();
 figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
     const node = event.node;
     // If this node is a Component, it's safe to call getInstancesAsync
     // if (node.type === 'COMPONENT') {
     //   console.log(await (node as ComponentNode).getInstancesAsync());
     // }
     let cssStyle = [];
+    let childNodesList = [];
     const constantValue = [];
     const css = (node) => __awaiter(void 0, void 0, void 0, function* () {
         const { cssValue } = cssDataClass;
@@ -198,81 +100,91 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
                 return ``;
             }
         }
+        let count = 0;
+        function calculateNestedChildCount(nodes) {
+            const childNodes = 'children' in nodes ? nodes.children : [];
+            // 1. Loop through each item in the current level's array
+            for (const nodeL of childNodes) {
+                // 2. Increment the count for the current node
+                count += 1;
+                // 3. Check for the nested array and recurse
+                if (Array.isArray(nodeL.children) && nodeL.children.length > 0) {
+                    // Add the result of the recursive call to the total count
+                    count += calculateNestedChildCount(nodeL.children);
+                }
+            }
+            return count;
+        }
         if (isVector) {
             return `<pre> icon </pre>`;
         }
         else {
-            console.log(node);
-            return `  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
+            return `  
+      // ${node.name}
+  <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
-    height:CalResponsiveValue(${node.height}),
+    height:CalResponsiveValue(${node.height}),${textStyle('fontSize') > 0 ? `    
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
+` : ``}
     ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
-    color: ${isInput ? `'#fff'` : `''`},
-   
+    color: ${isInput ? `'#fff'` : `''`},${node.name.includes('button') ? `
+    cursor:'pointer'` : ``}
     }}
     className='_${node.id.split(':').join('_').split(';').join('_')}     ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
-                return code(nodes);
-            })) : ''} ${text.length > 0 ? `{val_${(text.length > 20 ? text.slice(0, 20) : text).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_').replace(')', '_').replace('(', '_').replace('*', '')}}` : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
+                console.log(calculateNestedChildCount(nodes));
+                console.log(nodes);
+                // if(calculateNestedChildCount(nodes ) > 20){
+                //   return `
+                //   childrenList.map(())
+                //   `
+                // }
+                return `  
+            ${code(nodes)}`;
+            })) : ''} ${text.length > 0 ? text : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;
         }
     };
-    const constValueFun = (node) => {
-        const childNodes = 'children' in node ? node.children : [];
-        const text = 'characters' in node ? node.characters : "";
-        if (text.length > 0) {
-            constantValue.push(text);
-            return `${constantValue.map((val) => ` const ${val} = ${val} `).join('')}`;
-        }
-        if (childNodes) {
-            for (let i = 0; i < childNodes.length; i++) {
-                const childNode = childNodes[i];
-                // console.log(childNode.type,'from_css')
-                constValueFun(childNode);
-            }
-        }
-        return `
-    ${constantValue.map((val) => ` 
-  const val_${(val.length > 20 ? val.slice(0, 20) : val).split(' ').join('_').split(":").join('f').split("#").join('c').split("'").join('').split(",").join("_").split("&").join('And').split("$").join('S').split("-").join("_").split('%').join('_Percent_').split('@').join('a').split('.').join('_dot_').replace(')', '_').replace('(', '_').replace('*', '')} = "${val}" `).join('')}`;
-    };
-    const resFunction = `function CalResponsiveValue(value: number) {
-    function CalPercent(value: number) {
+    const resFunction = `
+  function CalResponsiveValue(value: number) {
 
+    function CalPercent(value: number) {
 
     const isSmallScreen = window.innerWidth <= 1280
     const isNormalScreen = (window.innerWidth > 1280) && (window.innerWidth <= 1800)
     const isBigScreen = window.innerWidth > 1800
 
-
     const percent: number = isSmallScreen ? 110 : isNormalScreen ? 100 : isBigScreen ? 88 : 0;
+    const baseScreenWidth:number = 1512 
 
-    return (value / 1512) * percent
+    return (value / baseScreenWidth) * percent
 
 }
+
     const width = window.innerWidth;
 
     return (CalPercent(value) / 100) * width
 }`;
     return [
         {
-            language: 'JAVASCRIPT',
-            code: (_b = (_a = code(node)) === null || _a === void 0 ? void 0 : _a.split('>,')) === null || _b === void 0 ? void 0 : _b.join('>'),
-            title: 'LazyDev HTML',
+            language: 'CSS',
+            code: yield css(node),
+            title: 'LazyDev External CSS',
         },
         {
             language: 'JAVASCRIPT',
-            code: (yield css(node)),
-            title: 'LazyDev CSS',
-        },
-        {
-            language: 'JAVASCRIPT',
-            code: (resFunction),
-            title: 'LazyDev Function',
-        },
-        {
-            language: 'JAVASCRIPT',
-            code: constValueFun(node),
-            title: 'LazyDev constantValue',
+            code: (yield css(node).then((cssData) => {
+                var _a, _b;
+                return `
+export function Component (){
+          ${resFunction}
+
+          return (
+          ${(_b = (_a = code(node)) === null || _a === void 0 ? void 0 : _a.split('>,')) === null || _b === void 0 ? void 0 : _b.join('>')}
+)
+  }
+        `;
+            })),
+            title: 'LazyDev React Component',
         }
     ];
 }));
