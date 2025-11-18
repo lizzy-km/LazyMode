@@ -160,6 +160,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
   }
 
+  
   const resFunction = `
   function CalResponsiveValue(value: number) {
 
