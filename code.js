@@ -50,6 +50,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
         return cssStyle.join(' ');
     });
     const code = (node) => {
+        var _a;
         const childNodes = 'children' in node ? node.children : [];
         const text = 'characters' in node ? node.characters : "";
         const padding = (position) => position in node ? String(node[position]) : '0';
@@ -100,21 +101,6 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
                 return ``;
             }
         }
-        let count = 0;
-        function calculateNestedChildCount(nodes) {
-            const childNodes = 'children' in nodes ? nodes.children : [];
-            // 1. Loop through each item in the current level's array
-            for (const nodeL of childNodes) {
-                // 2. Increment the count for the current node
-                count += 1;
-                // 3. Check for the nested array and recurse
-                if (Array.isArray(nodeL.children) && nodeL.children.length > 0) {
-                    // Add the result of the recursive call to the total count
-                    count += calculateNestedChildCount(nodeL.children);
-                }
-            }
-            return count;
-        }
         if (isVector) {
             return `<pre> icon </pre>`;
         }
@@ -123,7 +109,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
       // ${node.name}
   <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
-    height:CalResponsiveValue(${node.height}),${textStyle('fontSize') > 0 ? `    
+    height:CalResponsiveValue(${node.height}),${((_a = textStyle('fontSize')) !== null && _a !== void 0 ? _a : 0 > 0) ? `    
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
 ` : ``}
     ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
@@ -132,13 +118,6 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
     }}
     className='_${node.id.split(':').join('_').split(';').join('_')}     ' >
       ${childNodes && !isInput ? (childNodes.map((nodes) => {
-                console.log(calculateNestedChildCount(nodes));
-                console.log(nodes);
-                // if(calculateNestedChildCount(nodes ) > 20){
-                //   return `
-                //   childrenList.map(())
-                //   `
-                // }
                 return `  
             ${code(nodes)}`;
             })) : ''} ${text.length > 0 ? text : ''}  </${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} >`;

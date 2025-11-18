@@ -141,7 +141,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       // ${node.name}
   <${isInput ? `input` : node.type === 'TEXT' ? `p` : `div`} ${isInput ? ` placeholder={'${childProps('characters')}'} type={'text'} ` : ''}  style={{
     width: CalResponsiveValue(${node.width}),
-    height:CalResponsiveValue(${node.height}),${textStyle('fontSize') as number > 0 ? `    
+    height:CalResponsiveValue(${node.height}),${textStyle('fontSize')??0 as number > 0 ? `    
     fontSize:CalResponsiveValue(${isInput ? 16 : typeof (textStyle('fontSize')) === 'number' ? String(textStyle('fontSize')) : 14}),
 `: ``}
     ${cssPropsArr.map((value) => CssProps(value.type, value.position)).join('')}
@@ -160,7 +160,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
 
   }
 
-  
+
   const resFunction = `
   function CalResponsiveValue(value: number) {
 
