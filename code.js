@@ -22,6 +22,7 @@ class cssData {
 }
 const cssDataClass = new cssData();
 figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     const node = event.node;
     // If this node is a Component, it's safe to call getInstancesAsync
     // if (node.type === 'COMPONENT') {
@@ -44,7 +45,7 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
             for (let i = 0; i < childNodes.length; i++) {
                 const childNode = childNodes[i];
                 // console.log(childNode.type,'from_css')
-                yield css(childNode).catch((err) => console.log(err < 'from_cssFunc'));
+                yield css(childNode).catch((err) => console.log(err, 'from_cssFunc'));
             }
         }
         return cssStyle.join(' ');
@@ -86,6 +87,10 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
             {
                 type: 'borderBottomLeftRadius',
                 position: 'bottomLeftRadius'
+            },
+            {
+                type: 'borderBottomRightRadius',
+                position: 'bottomRightRadius'
             },
             {
                 type: 'gap',
@@ -143,17 +148,16 @@ figma.codegen.on('generate', (event) => __awaiter(void 0, void 0, void 0, functi
 
     return (CalPercent(value) / 100) * width
 }`;
+    const cssCode = yield css(node);
     return [
         {
             language: 'CSS',
-            code: yield css(node),
+            code: cssCode,
             title: 'LazyDev External CSS',
         },
         {
             language: 'JAVASCRIPT',
-            code: (yield css(node).then((cssData) => {
-                var _a, _b;
-                return `
+            code: `
 export function Component (){
           ${resFunction}
 
@@ -161,8 +165,7 @@ export function Component (){
           ${(_b = (_a = code(node)) === null || _a === void 0 ? void 0 : _a.split('>,')) === null || _b === void 0 ? void 0 : _b.join('>')}
 )
   }
-        `;
-            })),
+        `,
             title: 'LazyDev React Component',
         }
     ];

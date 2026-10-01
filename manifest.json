@@ -16,8 +16,12 @@
   "ui": "ui.html",
   "codegenLanguages": [
     {
-      "label": "Language Label",
-      "value": "language-value"
+      "label": "CSS",
+      "value": "css"
+    },
+    {
+      "label": "React Component",
+      "value": "react"
     }
   ],
   "networkAccess": {
