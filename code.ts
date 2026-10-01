@@ -53,7 +53,7 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
         // console.log(childNode.type,'from_css')
 
 
-        await css(childNode as SceneNode).catch((err) => console.log(err < 'from_cssFunc'))
+        await css(childNode as SceneNode).catch((err) => console.log(err, 'from_cssFunc'))
 
 
 
@@ -108,6 +108,10 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
       {
         type: 'borderBottomLeftRadius',
         position: 'bottomLeftRadius'
+      },
+      {
+        type: 'borderBottomRightRadius',
+        position: 'bottomRightRadius'
       },
       {
         type: 'gap',
@@ -182,17 +186,18 @@ figma.codegen.on('generate', async (event: CodegenEvent) => {
     return (CalPercent(value) / 100) * width
 }`
 
+  const cssCode = await css(node)
+
   return [
     {
       language: 'CSS',
-      code: await css(node),
+      code: cssCode,
 
       title: 'LazyDev External CSS',
     },
     {
       language: 'JAVASCRIPT',
-      code: (await css(node).then((cssData) => {
-        return `
+      code: `
 export function Component (){
           ${resFunction}
 
@@ -200,8 +205,7 @@ export function Component (){
           ${code(node)?.split('>,')?.join('>')}
 )
   }
-        `
-      })),
+        `,
 
       title: 'LazyDev React Component',
     }
